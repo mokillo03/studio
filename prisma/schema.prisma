@@ -1,0 +1,69 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum EstadoReparacion {
+  PENDIENTE
+  EN_PROCESO
+  POR_ENTREGAR
+  ENTREGADO
+  CANCELADO
+}
+
+model Cliente {
+  id        String   @id @default(uuid())
+  nombre    String
+  apellido  String
+  telefono  String
+  correo    String?
+  dni       String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  equipos   Equipo[]
+
+  @@map("clientes")
+}
+
+model Equipo {
+  id           String       @id @default(uuid())
+  tipo         String?      // Notebook, PC de escritorio, Consola, Monitor
+  marca        String
+  modelo       String
+  numeroSerie  String?      // Clave para identificar el equipo si reingresa
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  clienteId    String
+  cliente      Cliente      @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  reparaciones Reparacion[]
+
+  @@map("equipos")
+}
+
+model Reparacion {
+  id              String           @id @default(uuid())
+  fallaCliente    String           // Lo que describe el cliente al dejarlo
+  diagnostico     String?          // Lo que detecta el técnico tras revisar
+  observaciones   String?          // Accesorios: cargador, cables, rayones
+  estado          EstadoReparacion @default(PENDIENTE)
+
+  presupuesto     Decimal?         @db.Decimal(10, 2)
+  precioCobrado   Decimal?         @db.Decimal(10, 2)
+  motivoCancelado String?
+
+  fechaIngreso    DateTime         @default(now())
+  fechaSalida     DateTime?
+  updatedAt       DateTime         @updatedAt
+
+  equipoId        String
+  equipo          Equipo           @relation(fields: [equipoId], references: [id], onDelete: Cascade)
+
+  @@map("reparaciones")
+}
